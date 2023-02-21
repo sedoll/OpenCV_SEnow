@@ -2,12 +2,11 @@
 
 <h2>OpenCV로 만든 카메라 필터, 스노우</h2>
 
-[Test Video](`https://youtu.be/sYYX3Na88J` "My Youtube")  
+[Test Video](https://youtu.be/sYYX3Na88J "My Youtube")
 
-[Blog](`https://blog.naver.com/tmvmffpsej/222795649596` "My Blog")  
+[Blog](https://blog.naver.com/tmvmffpsej/222795649596 "My Blog")
 
-[Reference](`https://youtu.be/XK3eU9egll8`)  
-
+[Reference](https://youtu.be/XK3eU9egll8)
 
 ### Release Note
 
@@ -16,7 +15,6 @@
 22.07.01
 
 최종완성
-
 
 23.02.21
 
