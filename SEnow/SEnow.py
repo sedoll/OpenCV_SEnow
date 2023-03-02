@@ -6,18 +6,20 @@ import datetime
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-#이미지 불러오기
-imageList = [[cv2.imread('right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread('left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
-              cv2.imread('nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
-            [cv2.imread('right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread('left_eye2.png', cv2.IMREAD_UNCHANGED),
-              cv2.imread('nose_tip2.png', cv2.IMREAD_UNCHANGED)],
-            [cv2.imread('right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread('left_eye3.png', cv2.IMREAD_UNCHANGED),
-              cv2.imread('nose_tip3.png', cv2.IMREAD_UNCHANGED)]]
+# 이미지 불러오기
+imageList = {
+    'panda' : [cv2.imread('C:/SEnowImage/panda/right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread('C:/SEnowImage/panda/left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread('C:/SEnowImage/panda/nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
+    'cat' : [cv2.imread('C:/SEnowImage/cat/right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread('C:/SEnowImage/cat/left_eye2.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread('C:/SEnowImage/cat/nose_tip2.png', cv2.IMREAD_UNCHANGED)],
+    'dog' : [cv2.imread('C:/SEnowImage/dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread('C:/SEnowImage/dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread('C:/SEnowImage/dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
+}
 
 # 이미지 기본값은 판다
-image_right_eye = imageList[0][0]
-image_left_eye = imageList[0][1]
-image_nose_tip = imageList[0][2]
+image_right_eye = imageList['panda'][0]
+image_left_eye = imageList['panda'][1]
+image_nose_tip = imageList['panda'][2]
 
 # For static images:
 IMAGE_FILES = []
@@ -99,25 +101,24 @@ with mp_face_detection.FaceDetection(
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         if results.detections:
             for detection in results.detections:
-                pass
                 # mp_drawing.draw_detection(image, detection)
                 
-        #특정 위치 가져오기
-        keypoints = detection.location_data.relative_keypoints
-        right_eye = keypoints[0] # 오른쪽 눈
-        left_eye = keypoints[1] # 왼쪽 눈
-        nose_tip = keypoints[2] # 코 끝 부분
-        
-        # 이미지 위치 지정
-        right_eye = (int(right_eye.x * w)-20, int(right_eye.y * h)-100)
-        left_eye = (int(left_eye.x * w)+20, int(left_eye.y * h)-100) 
-        nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+30)
-        
-        # 이미지 대입
-        overlay(image, *right_eye, 25, 25, image_right_eye)
-        overlay(image, *left_eye, 25, 25, image_left_eye)
-        overlay(image, *nose_tip, 50, 50, image_nose_tip)
-        
+                #특정 위치 가져오기
+                keypoints = detection.location_data.relative_keypoints
+                right_eye = keypoints[0] # 오른쪽 눈
+                left_eye = keypoints[1] # 왼쪽 눈
+                nose_tip = keypoints[2] # 코 끝 부분
+
+                # 이미지 위치 지정
+                right_eye = (int(right_eye.x * w)-20, int(right_eye.y * h)-100)
+                left_eye = (int(left_eye.x * w)+20, int(left_eye.y * h)-100) 
+                nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+30)
+
+                # 이미지 대입
+                overlay(image, *right_eye, 25, 25, image_right_eye)
+                overlay(image, *left_eye, 25, 25, image_left_eye)
+                overlay(image, *nose_tip, 50, 50, image_nose_tip)
+
         # 영상 출력
         # Flip the image horizontally for a selfie-view display.
 #         cv2.imshow('MediaPipe Face Detection', cv2.flip(image, 1)) # 좌우 반전되어 출력
@@ -132,21 +133,21 @@ with mp_face_detection.FaceDetection(
         
         # 이미지 변환
         if keycode == ord('a'):
-            image_right_eye = imageList[0][0]
-            image_left_eye = imageList[0][1]
-            image_nose_tip = imageList[0][2]
+            image_right_eye = imageList['panda'][0]
+            image_left_eye = imageList['panda'][1]
+            image_nose_tip = imageList['panda'][2]
             print('판다')
 
         if keycode == ord('s'):
-            image_right_eye = imageList[1][0]
-            image_left_eye = imageList[1][1]
-            image_nose_tip = imageList[1][2]
+            image_right_eye = imageList['cat'][0]
+            image_left_eye = imageList['cat'][1]
+            image_nose_tip = imageList['cat'][2]
             print('고양이')
 
         if keycode == ord('d'):
-            image_right_eye = imageList[2][0]
-            image_left_eye = imageList[2][1]
-            image_nose_tip = imageList[2][2]
+            image_right_eye = imageList['dog'][0]
+            image_left_eye = imageList['dog'][1]
+            image_nose_tip = imageList['dog'][2]
             print('개')
         
         # 화면 캡처
