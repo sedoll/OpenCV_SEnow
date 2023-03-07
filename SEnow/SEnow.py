@@ -60,6 +60,7 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
     mask_image = alpha / 255 # 0~255 ->255로 나누면 0~1의 값을 가짐, 1: 불투명, 0: 투명
     
     # 얼굴이 창 크기를 벗어나면 오류가 생기므로 예외처리
+    print(x, y, w, h)
     try:
         for c in range(0, 3): #BGR 처리
             image[y-h: y+h, x-w: x+w, c] = (overlay_image[:, :, c] * mask_image) + (image[y-h: y+h, x-w: x+w, c] * (1-mask_image))
@@ -89,7 +90,7 @@ with mp_face_detection.FaceDetection(
         success, image = cap.read()
         if not success:
             break
-                
+
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
         image.flags.writeable = False
@@ -102,6 +103,7 @@ with mp_face_detection.FaceDetection(
         if results.detections:
             for detection in results.detections:
                 # mp_drawing.draw_detection(image, detection)
+                # print(detection) # detection의 값을 보기위해 사용
                 
                 #특정 위치 가져오기
                 keypoints = detection.location_data.relative_keypoints
@@ -114,7 +116,10 @@ with mp_face_detection.FaceDetection(
                 left_eye = (int(left_eye.x * w)+20, int(left_eye.y * h)-100) 
                 nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+30)
 
-                # 이미지 대입
+                # 이미지 대입, 크기 지정 / width, height 값을 바꾸면 실행이 안되는 버그가 있음
+                # box_wh = detection.location_data.relative_bounding_box # 크기를 동적으로 하기위한 코드
+                # box_w = box_wh.width
+                # box_h = box_wh.height
                 overlay(image, *right_eye, 25, 25, image_right_eye)
                 overlay(image, *left_eye, 25, 25, image_left_eye)
                 overlay(image, *nose_tip, 50, 50, image_nose_tip)
