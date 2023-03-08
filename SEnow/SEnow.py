@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import os
 import datetime
+import numpy as np
 
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
@@ -46,13 +47,14 @@ with mp_face_detection.FaceDetection(
 # For webcam input:
 cap = cv2.VideoCapture(0)
 
+# 이미지 저장 기본 path 주소
 SAVE_PATH = "C:/senow/"
 
 # 창 크기 출력
-w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-print(w, h) # 640, 480
-SCREEN_REGION = (0, 0, w, h)
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+print(width, height) # 640, 480
+SCREEN_REGION = (0, 0, width, height)
 
 # 캠에 이미지 덮어 씌우는 함수
 def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, width, height, 덮어씌울 이미지
@@ -60,11 +62,13 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
     mask_image = alpha / 255 # 0~255 ->255로 나누면 0~1의 값을 가짐, 1: 불투명, 0: 투명
     
     # 얼굴이 창 크기를 벗어나면 오류가 생기므로 예외처리
-    print(x, y, w, h)
+    # print(x, y, w, h)
+    
     try:
         for c in range(0, 3): #BGR 처리
-            image[y-h: y+h, x-w: x+w, c] = (overlay_image[:, :, c] * mask_image) + (image[y-h: y+h, x-w: x+w, c] * (1-mask_image))
-    except:
+             image[y-h: y+h, x-w: x+w, c] = (overlay_image[:, :, c] * mask_image) + (image[y-h: y+h, x-w: x+w, c] * (1-mask_image))
+    except Exception as e:
+        print(e)
         pass
     
 # 이미지 저장 함수
@@ -112,17 +116,25 @@ with mp_face_detection.FaceDetection(
                 nose_tip = keypoints[2] # 코 끝 부분
 
                 # 이미지 위치 지정
+                w, h = width, height
                 right_eye = (int(right_eye.x * w)-20, int(right_eye.y * h)-100)
                 left_eye = (int(left_eye.x * w)+20, int(left_eye.y * h)-100) 
                 nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+30)
 
                 # 이미지 대입, 크기 지정 / width, height 값을 바꾸면 실행이 안되는 버그가 있음
-                # box_wh = detection.location_data.relative_bounding_box # 크기를 동적으로 하기위한 코드
-                # box_w = box_wh.width
-                # box_h = box_wh.height
-                overlay(image, *right_eye, 25, 25, image_right_eye)
-                overlay(image, *left_eye, 25, 25, image_left_eye)
-                overlay(image, *nose_tip, 50, 50, image_nose_tip)
+                box_wh = detection.location_data.relative_bounding_box # 크기를 동적으로 하기위한 코드
+                box_w = int(box_wh.width * 100)
+                box_h = int(box_wh.height * 100)
+                
+                # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형
+                overlay_right_eye = cv2.resize(image_right_eye, (box_w*2, box_h*2))
+                overlay(image, *right_eye, box_w, box_h, overlay_right_eye)
+                
+                overlay_left_eye = cv2.resize(image_left_eye, (box_w*2, box_h*2))
+                overlay(image, *left_eye, box_w, box_h, overlay_left_eye)
+                
+                overlay_nose_tip = cv2.resize(image_nose_tip, (box_w*4, box_h*4))
+                overlay(image, *nose_tip, box_w*2, box_h*2, overlay_nose_tip)
 
         # 영상 출력
         # Flip the image horizontally for a selfie-view display.
