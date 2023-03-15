@@ -7,13 +7,14 @@ import numpy as np
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-path = 'C:/SEnowImage/'
+# 동물 이미지 기본 path 주소
+animal_path = 'C:/SEnowImage/'
 
 # For webcam input:
 cap = cv2.VideoCapture(0)
 
 # 이미지 저장 기본 path 주소
-SAVE_PATH = "C:/senow/"
+save_path = "C:/senow/"
 
 # 창 크기 출력
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -29,12 +30,12 @@ thickness = 2 # 굵기
 
 # 이미지 불러오기
 imageList = {
-    'panda' : [cv2.imread(path + 'panda/right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread(path+'panda/left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(path+'panda/nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
-    'cat' : [cv2.imread(path+'cat/right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread(path+'cat/left_eye2.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(path+'cat/nose_tip2.png', cv2.IMREAD_UNCHANGED)],
-    'dog' : [cv2.imread(path+'dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread(path+'dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(path+'dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
+    'panda' : [cv2.imread(animal_path+'panda/right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'panda/left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'panda/nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
+    'cat' : [cv2.imread(animal_path+'cat/right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'cat/left_eye2.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'cat/nose_tip2.png', cv2.IMREAD_UNCHANGED)],
+    'dog' : [cv2.imread(animal_path+'dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
 }
 
 # 이미지 기본값은 판다
@@ -68,10 +69,9 @@ with mp_face_detection.FaceDetection(
 def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, width, height, 덮어씌울 이미지
     alpha = overlay_image[:, :, 3] #BGRA, A값을 가져옴
     mask_image = alpha / 255 # 0~255 ->255로 나누면 0~1의 값을 가짐, 1: 불투명, 0: 투명
-    
-    # 얼굴이 창 크기를 벗어나면 오류가 생기므로 예외처리
     # print(x, y, w, h)
     
+    # 얼굴이 창 크기를 벗어나면 오류가 생기므로 예외처리
     try:
         for c in range(0, 3): #BGR 처리
              image[y-h: y+h, x-w: x+w, c] = (overlay_image[:, :, c] * mask_image) + (image[y-h: y+h, x-w: x+w, c] * (1-mask_image))
@@ -83,13 +83,13 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
 def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받아옴
     
     # 이미지 저장 폴더, 없는 경우 생성
-    if not os.path.exists(SAVE_PATH):
-        os.makedirs(SAVE_PATH)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     try:
         # 현재 시간을 파일 이름으로 사용하여 png 파일로 저장
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-        file_name = f"{SAVE_PATH}/{current_time}.png"
+        file_name = f"{save_path}/{current_time}.png"
         cv2.imwrite(file_name, screenshot) # 이미지 저장
         print(f"Screenshot saved to {file_name}") # 출력
     except:
@@ -141,7 +141,7 @@ with mp_face_detection.FaceDetection(
                 left_eye = (int(left_eye.x * w)+box_w, int(left_eye.y * h)-(box_h*3)) 
                 nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+box_h)
                 
-                # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형
+                # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형 한 후 사용
                 overlay_right_eye = cv2.resize(image_right_eye, (box_w*2, box_h*2))
                 overlay(image, *right_eye, box_w, box_h, overlay_right_eye)
                 
