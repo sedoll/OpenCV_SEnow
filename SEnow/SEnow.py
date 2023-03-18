@@ -3,6 +3,8 @@ import mediapipe as mp
 import os
 import datetime
 import numpy as np
+import pyaudio
+import wave
 
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
@@ -10,11 +12,20 @@ mp_drawing = mp.solutions.drawing_utils
 # 동물 이미지 기본 path 주소
 animal_path = 'C:/SEnowImage/'
 
-# For webcam input:
+# 이미지 저장 기본 path 주소
+save_path = 'C:/senow/'
+
+# 웹캠
 cap = cv2.VideoCapture(0)
 
-# 이미지 저장 기본 path 주소
-save_path = "C:/senow/"
+# 비디오 코덱을 설정합니다.
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+# 녹화된 비디오를 저장할 파일 이름을 지정합니다.
+filename = 'output.avi'
+
+# 비디오 출력 객체를 생성합니다.
+out = cv2.VideoWriter(filename, fourcc, 20.0, (640, 480))
 
 # 창 크기 출력
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -27,6 +38,8 @@ font = cv2.FONT_HERSHEY_SIMPLEX # 폰트
 scale = 1 # 크기
 color = (255, 0, 0) # 색상
 thickness = 2 # 굵기
+
+run = False
 
 # 이미지 불러오기
 imageList = {
@@ -94,6 +107,8 @@ def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받�
         print(f"Screenshot saved to {file_name}") # 출력
     except:
         print("에러 발생")
+
+
 
 # 메인
 with mp_face_detection.FaceDetection(
@@ -187,6 +202,12 @@ with mp_face_detection.FaceDetection(
         # 화면 캡처
         if keycode == ord('p'):
             displayCapture(image)
+        
+        if keycode == ord('v'):
+            run = True
+            
+        if keycode == ord('b'):
+            run = False
 
 cap.release()
 cv2.destroyAllWindows()
