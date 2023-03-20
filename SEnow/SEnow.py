@@ -6,6 +6,7 @@ import numpy as np
 import pyaudio
 import wave
 
+# mediapipe library 설정
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
@@ -17,15 +18,6 @@ save_path = 'C:/senow/'
 
 # 웹캠
 cap = cv2.VideoCapture(0)
-
-# 비디오 코덱을 설정합니다.
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-
-# 녹화된 비디오를 저장할 파일 이름을 지정합니다.
-filename = 'output.avi'
-
-# 비디오 출력 객체를 생성합니다.
-out = cv2.VideoWriter(filename, fourcc, 20.0, (640, 480))
 
 # 창 크기 출력
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -108,8 +100,6 @@ def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받�
     except:
         print("에러 발생")
 
-
-
 # 메인
 with mp_face_detection.FaceDetection(
         model_selection=0, min_detection_confidence=0.5) as face_detection:
@@ -145,29 +135,32 @@ with mp_face_detection.FaceDetection(
                 left_eye = keypoints[1] # 왼쪽 눈
                 nose_tip = keypoints[2] # 코 끝 부분
                 
-                # 이미지 대입, 크기 지정 / width, height 값을 바꾸면 실행이 안되는 버그가 있음
-                box_wh = detection.location_data.relative_bounding_box # 크기를 동적으로 하기위한 코드
+                # 이미지의 크기를 동적으로 하기위해 얼굴의 크기 값을 연산하여 불러옴
+                box_wh = detection.location_data.relative_bounding_box
                 box_w = int(box_wh.width * 100)
                 box_h = int(box_wh.height * 100)
 
-                # 이미지 위치 지정
+                # 이미지 위치 지정, 얼굴크기에 맞게 위치를 동적으로 지정 함
                 w, h = width, height
                 right_eye = (int(right_eye.x * w)-box_w, int(right_eye.y * h)-(box_h*3))
                 left_eye = (int(left_eye.x * w)+box_w, int(left_eye.y * h)-(box_h*3)) 
                 nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+box_h)
                 
+                # 이미지 대입
                 # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형 한 후 사용
+                # 오른쪽 귀
                 overlay_right_eye = cv2.resize(image_right_eye, (box_w*2, box_h*2))
                 overlay(image, *right_eye, box_w, box_h, overlay_right_eye)
                 
+                # 왼쪽 귀
                 overlay_left_eye = cv2.resize(image_left_eye, (box_w*2, box_h*2))
                 overlay(image, *left_eye, box_w, box_h, overlay_left_eye)
                 
+                # 코, 입
                 overlay_nose_tip = cv2.resize(image_nose_tip, (box_w*4, box_h*4))
                 overlay(image, *nose_tip, box_w*2, box_h*2, overlay_nose_tip)
 
         # 영상 출력
-        # Flip the image horizontally for a selfie-view display.
         cv2.imshow('SEnow Camera', cv2.resize(image, None, fx=1.5, fy=1.5))
 
         # 키보드 입력
@@ -198,16 +191,6 @@ with mp_face_detection.FaceDetection(
             image_nose_tip = imageList['dog'][2]
             animal = 'dog'
             print('개')
-        
-        # 화면 캡처
-        if keycode == ord('p'):
-            displayCapture(image)
-        
-        if keycode == ord('v'):
-            run = True
-            
-        if keycode == ord('b'):
-            run = False
 
 cap.release()
 cv2.destroyAllWindows()
