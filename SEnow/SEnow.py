@@ -2,9 +2,6 @@ import cv2
 import mediapipe as mp
 import os
 import datetime
-import numpy as np
-import pyaudio
-import wave
 
 # mediapipe library 설정
 mp_face_detection = mp.solutions.face_detection
