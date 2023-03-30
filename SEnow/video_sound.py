@@ -1,61 +1,116 @@
 import cv2
-import numpy as np
+import datetime
 import pyaudio
 import wave
+import numpy as np
 
-# 웹캠 설정
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-# 비디오 작성 설정
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+# 녹화 파일 저장 위치
+fath = './record/'
 
-# 오디오 작성 설정
-audio_format = pyaudio.paInt16 # 오디오 포맷 설정
-channels = 1 # 모노
-sample_rate = 44100 # 샘플 레이트 설정
+# 영상
+fourcc = cv2.VideoWriter_fourcc(*'XVID') # 영상 코덱 설정
+out = None # 영상 저장 객체 초기화
+fps = 20.0
+
+# 음성
 chunk = 1024 # 청크 크기
-audio_filename = "output.wav"
+format = pyaudio.paInt16 # 오디오 포맷 설정
+channels = 2 # 스테레오 (2), 모노(1)
+rate = 22050 # 샘플 레이트 설정, 44100으로하면 2배속으로 되서 22050 으로 했더니 정배속으로 됨
+duration = 10 # 녹음 최대 시간
 audio_frames = []
+audio = pyaudio.PyAudio()
+stream = None
 
-audio_writer = wave.open(audio_filename, 'wb')
-audio_writer.setnchannels(channels)
-audio_writer.setsampwidth(pyaudio.PyAudio().get_sample_size(audio_format))
-audio_writer.setframerate(sample_rate)
+# 녹화중인지 아닌지 여부를 저장할 변수
+recording = False
 
-# 오디오 스트림 시작
-p = pyaudio.PyAudio()
-stream = p.open(format=audio_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk)
+fileName = ""
 
-while True:
-    # 프레임 읽기
+while(True):
+    # 웹캠에서 새로운 프레임 읽기
     ret, frame = cap.read()
+    
     if not ret:
         break
     
-    # 프레임 작성
-    out.write(frame)
+    frame = cv2.flip(frame, 1) # 영상 좌우반전
     
-    # 오디오 읽기
-    audio_data = stream.read(chunk)
-    audio_frames.append(audio_data)
+    # 현재시간 표시
+    now = datetime.datetime.now().strftime("%H-%M-%S")
+    cv2.putText(frame, str(now), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2)
     
-    # 화면에 출력
-    cv2.imshow('frame', frame)
+    # 영상 출력
+    cv2.imshow('frame',frame)
     
-    # 종료
-    if cv2.waitKey(1) == 27:
+    keycode = cv2.waitKey(25)
+    
+    # 녹화 시작
+    if keycode == ord('v'):
+        # 오디오 생성
+        stream = audio.open(format=format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
+        
+        # 비디오 저장 객체 생성
+        fileName = datetime.datetime.now().strftime("%H-%M-%S")
+        out = cv2.VideoWriter(fath + f'{fileName}.avi',fourcc, fps, (width, height))
+
+        # 녹화 시작
+        recording = True
+        start_time = datetime.datetime.now()
+    
+    # 녹음 시간이 duration 을 넘으면 녹화 종료
+    if keycode == ord('b') and recording:
+        # 녹화 종료
+        out.release()
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        
+        waveFile = wave.open(fath + f"{fileName}.wav", 'wb')
+        waveFile.setnchannels(channels)
+        waveFile.setsampwidth(audio.get_sample_size(format))
+        waveFile.setframerate(rate)
+        waveFile.writeframes(b''.join(audio_frames))
+        waveFile.close()
+        audio_frames = []
+        
+        recording = False
+    
+    # 녹화 중이면
+    if recording:
+        
+        # 프레임 녹화
+        out.write(frame)
+        
+        # 음원 녹화
+        audio_frames.append(np.frombuffer(stream.read(chunk), dtype=np.int16))
+        
+        # 녹음 시간이 duration 을 넘으면 녹화 종료
+        if (datetime.datetime.now() - start_time).seconds >= duration:
+            # 녹화 종료
+            out.release()
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            
+            waveFile = wave.open(fath + f"{fileName}.wav", 'wb')
+            waveFile.setnchannels(channels)
+            waveFile.setsampwidth(audio.get_sample_size(format))
+            waveFile.setframerate(rate)
+            waveFile.writeframes(b''.join(audio_frames))
+            waveFile.close()
+            audio_frames = []
+            
+            recording = False
+    
+    # 종료 esc
+    if keycode == 27:
         break
 
-# 작성된 프레임과 오디오 저장
-out.release()
-stream.stop_stream()
-stream.close()
-p.terminate()
-audio_writer.writeframes(b''.join(audio_frames))
-audio_writer.close()
-
-# 윈도우 종료
+if cap.isOpened():
+    cap.release()
 cv2.destroyAllWindows()

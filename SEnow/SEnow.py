@@ -82,7 +82,7 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
         pass
     
 # 이미지 저장 함수
-def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받아옴
+def displayCapture(image): # screenshot을 통해 opencv 창 정보를 받아옴
     
     # 이미지 저장 폴더, 없는 경우 생성
     if not os.path.exists(save_path):
@@ -92,7 +92,7 @@ def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받�
         # 현재 시간을 파일 이름으로 사용하여 png 파일로 저장
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
         file_name = f"{save_path}/{current_time}.png"
-        cv2.imwrite(file_name, screenshot) # 이미지 저장
+        cv2.imwrite(file_name, image) # 이미지 저장
         print(f"Screenshot saved to {file_name}") # 출력
     except:
         print("에러 발생")
@@ -100,11 +100,12 @@ def displayCapture(screenshot): # screenshot을 통해 opencv 창 정보를 받�
 # 메인
 with mp_face_detection.FaceDetection(
         model_selection=0, min_detection_confidence=0.5) as face_detection:
+    
     animal = 'panda'
     while cap.isOpened():
-        success, image = cap.read()
+        ret, image = cap.read()
         
-        if not success:
+        if not ret:
             break
         
         image = cv2.flip(image, 1) # 영상 좌우반전
@@ -161,7 +162,7 @@ with mp_face_detection.FaceDetection(
         cv2.imshow('SEnow Camera', cv2.resize(image, None, fx=1.5, fy=1.5))
 
         # 키보드 입력
-        keycode = cv2.waitKey(1) # 입력 값을 이런식으로 변수에 저장해서 사용해야 딜레이가 생기지 않음
+        keycode = cv2.waitKey(1)
         
         #esc 를 누르면 종료
         if keycode == 27:
@@ -189,5 +190,6 @@ with mp_face_detection.FaceDetection(
             animal = 'dog'
             print('개')
 
-cap.release()
+if cap.isOpened():
+    cap.release()
 cv2.destroyAllWindows()
