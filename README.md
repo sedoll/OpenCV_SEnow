@@ -1,15 +1,26 @@
 # OpenCV_SEnow
 
-<h2>OpenCV로 만든 카메라 필터, 스노우</h2>
+## OpenCV로 만든 카메라 필터, 스노우
+---
 
-[Test Video](https://youtu.be/sYYX3Na88J "My Youtube")
-<br>
+[Test Video](https://youtu.be/sYYX3Na88J "My Youtube")<br>
 
-[Blog](https://blog.naver.com/tmvmffpsej/222795649596 "My Blog")
-<br>
+[Blog](https://blog.naver.com/tmvmffpsej/222795649596 "My Blog")<br>
 
-[Reference](https://youtu.be/XK3eU9egll8)
-<br><br>
+[Reference](https://youtu.be/XK3eU9egll8)<br><br>
+
+## 사용한 라이브러리
+---
+
+[mediapipe](https://pypi.org/project/mediapipe)<br>
+
+[OpenCV](https://pypi.org/project/opencv-python)<br>
+
+[pyaudio](https://pypi.org/project/PyAudio)<br>
+
+[moviepy](https://pypi.org/project/moviepy)<br>
+
+[numpy](https://pypi.org/project/numpy)<br><br>
 
 ### 녹화 한 파일에서 음성이 안 들릴경우
 
@@ -33,7 +44,7 @@
 
 <strong>23.02.21</strong>
 
-<p>p를 누를 경우 png 형태로 이미지 저장기능 추가, 정말로 필터 카메라 처럼 만듬</p><
+<p>p를 누를 경우 png 형태로 이미지 저장기능 추가, 정말로 필터 카메라 처럼 만듬</p><br>
 
 <strong>23.03.02</strong>
 
@@ -50,3 +61,7 @@
 <strong>23.03.30</strong>
 
 <p>영상과 음성 녹화 성공, 이제 만들어진 영상과 음성을 하나로 합치면 됨</p><br>
+
+<strong>23.04.05</strong>
+
+<p>moviepy를 이용해서 영상 합치기 성공, avi(video) + wav(audio) = mp4(video + audio)</p><br>
