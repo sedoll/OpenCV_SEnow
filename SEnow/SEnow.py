@@ -1,16 +1,22 @@
-import cv2
-import mediapipe as mp
-import os
-import datetime
+import cv2 # opencv, 영상처리
+import mediapipe as mp # mediopipe, 얼굴 인식 라이브러리 사용
+import os # 파일 생성을 위해 사용
+import datetime # 파일 이름을 지정하기 위해 그리고 최대 녹화시간을 카운트 하기 위해 사용
+import pyaudio # 오디오 녹화
+import wave # 오디오 녹화
+import numpy as np # 오디오 연산
+from moviepy.editor import * # 비디오, 오디오 합성
+import time # 음성 파일이 생성 될 때 까지 delay 발생시키기 위해 사용
+import threading # 쓰레드, 두 가지 이상의 일을 하기 위해 사용 (opencv를 이용한 영상처리, moviepy를 이용한 영상, 음성 합성 동시 처리)
 
-# mediapipe library 설정
+# mediapipe library 중에서 얼굴 인식 설정
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
-# 동물 이미지 기본 path 주소
+# 동물 이미지 기본 주소
 animal_path = 'C:/SEnowImage/'
 
-# 이미지 저장 기본 path 주소
+# 이미지, 영상 저장 기본 주소
 save_path = 'C:/senow/'
 
 # 웹캠 객체
@@ -29,7 +35,84 @@ scale = 1 # 크기
 color = (255, 0, 0) # 색상
 thickness = 2 # 굵기
 
-run = False
+# 영상
+fourcc = cv2.VideoWriter_fourcc(*'XVID') # 영상 코덱 설정
+out = None # 영상 저장 객체 초기화
+fps = 20.0 # 영상 프레임
+
+# 음성
+chunk = 1024 # 청크 크기
+format = pyaudio.paInt16 # 오디오 포맷 설정
+channels = 2 # 스테레오 (2), 모노(1)
+rate = 22050 # 샘플 레이트 설정, 44100으로하면 2배속으로 되서 22050 으로 했더니 정배속으로 됨
+duration = 20 # 녹음 최대 시간
+audio_frames = []
+audio = pyaudio.PyAudio() # 음성 객체 초기화
+stream = None 
+
+# 녹화중인지 아닌지 여부를 저장할 변수
+recording = False
+
+# 파일 이름 저장 변수 (현재 시간을 이름으로 지정)
+fileName = ""
+
+# 녹화 종료 클래스
+class record():
+    
+    def __init__(self):
+        pass
+    
+    def exit(out, stream, audio, audio_frames):
+        global recording
+        out.release()
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        
+        waveFile = wave.open(save_path + f"{fileName}.wav", 'wb')
+        waveFile.setnchannels(channels)
+        waveFile.setsampwidth(audio.get_sample_size(format))
+        waveFile.setframerate(rate)
+        waveFile.writeframes(b''.join(audio_frames))
+        waveFile.close()
+        audio_frames = []
+        recording = False
+        print('녹화종료')
+
+# 영상, 소리 합성후 저장 함수
+def videoCapture():
+    print('영상, 소리 합성중')
+    # 음성 파일은 녹화가 끝나고 만들어 지므로 살짝 지연
+    time.sleep(2)
+    
+    # 합성할 비디오, 오디오 객체 생성
+    videoclip = VideoFileClip(save_path + f"{fileName}.avi")
+    audioclip = AudioFileClip(save_path + f"{fileName}.wav")
+
+    # 비디오에 오디오 삽입후 파일 생성
+    videoclip.audio = audioclip
+    video = f"{fileName}.mp4"
+    videoclip.write_videofile(save_path + video)
+    print(f'영상, 소리 합성 완료, {video} 생성 완료')
+    
+# 이미지 저장 함수
+def displayCapture(image):
+    
+    # 저장 폴더, 없는 경우 생성
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
+    try:
+        # 현재 시간을 파일 이름으로 지정하여 png 파일로 저장
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        file_name = f"{save_path}/{current_time}.png"
+        cv2.imwrite(file_name, image) # 이미지 저장
+        print(f"{file_name} 저장 완료") # 출력
+    except:
+        print("에러 발생")
+
+# 비디오와 오디오를 합칠때 thread를 쓰지 않으면 opencv가 끊기므로 thread 적용
+video_save = threading.Thread(target=videoCapture)
 
 # 동물 이미지 불러오기
 # cv2.IMREAD_UNCHANGED, 이미지파일을 alpha channel(누끼)까지 포함하여 읽는다.
@@ -83,38 +166,6 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
     except Exception as e:
         print(e)
         pass
-    
-# 이미지 저장 함수
-def displayCapture(image):
-    
-    # 저장 폴더, 없는 경우 생성
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-
-    try:
-        # 현재 시간을 파일 이름으로 지정하여 png 파일로 저장
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-        file_name = f"{save_path}/{current_time}.png"
-        cv2.imwrite(file_name, image) # 이미지 저장
-        print(f"{file_name} 저장 완료") # 출력
-    except:
-        print("에러 발생")
-        
-# 동영상 저장 함수
-def displayCapture(image):
-    
-    # 저장 폴더, 없는 경우 생성
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-
-    try:
-        # 현재 시간을 파일 이름으로 지정하여 png 파일로 저장
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-        file_name = f"{save_path}/{current_time}.png"
-        cv2.imwrite(file_name, image) # 이미지 저장
-        print(f"{file_name} 저장 완료") # 출력
-    except:
-        print("에러 발생")
 
 # 메인 실행 코드
 with mp_face_detection.FaceDetection(
@@ -130,6 +181,10 @@ with mp_face_detection.FaceDetection(
         # 영상 좌우반전
         # 스마트폰의 전면 카메라 처럼 카메라 적용
         image = cv2.flip(image, 1)
+        
+        # 현재시간 표시
+        now = datetime.datetime.now().strftime("%H-%M-%S")
+        cv2.putText(image, str(now), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2)
         
         # 현재 적용된 동물 필터 텍스트 출력
         cv2.putText(image, animal, org, font, scale, color, thickness)
@@ -189,7 +244,7 @@ with mp_face_detection.FaceDetection(
         cv2.imshow('SEnow Camera', cv2.resize(image, None, fx=1.5, fy=1.5))
 
         # 키보드 입력
-        keycode = cv2.waitKey(1)
+        keycode = cv2.waitKey(25)
         
         #esc 를 누르면 종료
         if keycode == 27:
@@ -219,7 +274,44 @@ with mp_face_detection.FaceDetection(
         
         # opencv 사진 저장
         if keycode == ord('p'):
-            displayCapture(image)
+            # 이미지라서 args를 튜플 형식이 아닌 리스트 형식으로 값을 넣어줘야 된다.
+            img_save = threading.Thread(target=displayCapture, args=[image])
+            img_save.start()
+        
+        # 녹화 시작
+        if keycode == ord('v') and recording == False:
+            print('녹화 시작')
+            # 오디오 생성
+            stream = audio.open(format=format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
+            
+            # 비디오 저장 객체 생성
+            fileName = datetime.datetime.now().strftime("%H-%M-%S")
+            out = cv2.VideoWriter(save_path + f'{fileName}.avi',fourcc, fps, (width, height))
+
+            # 녹화 시작
+            recording = True
+            start_time = datetime.datetime.now()
+        
+        # 녹음 시간이 duration 을 넘으면 녹화 종료
+        if keycode == ord('b') and recording:
+            # 녹화 종료
+            record.exit(out, stream, audio, audio_frames)
+            video_save.start()
+        
+        # 녹화 중이면
+        if recording:
+            
+            # 프레임 녹화
+            out.write(image)
+            
+            # 음원 녹화
+            audio_frames.append(np.frombuffer(stream.read(chunk), dtype=np.int16))
+            
+            # 녹음 시간이 duration 을 넘으면 녹화 종료
+            if (datetime.datetime.now() - start_time).seconds >= duration:
+                # 녹화 종료
+                record.exit(out, stream, audio, audio_frames)
+                video_save.start()
 
 if cap.isOpened():
     cap.release()
