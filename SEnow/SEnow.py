@@ -29,7 +29,7 @@ print(width, height) # 640, 480
 SCREEN_REGION = (0, 0, width, height)
 
 # 텍스트
-org = (50, 50) # 위치
+org = (width-100, 30) # 위치
 font = cv2.FONT_HERSHEY_SIMPLEX # 폰트
 scale = 1 # 크기
 color = (255, 0, 0) # 색상
@@ -38,14 +38,14 @@ thickness = 2 # 굵기
 # 영상
 fourcc = cv2.VideoWriter_fourcc(*'XVID') # 영상 코덱 설정
 out = None # 영상 저장 객체 초기화
-fps = 20.0 # 영상 프레임
+fps = 22.0 # 영상 프레임
 
 # 음성
 chunk = 1024 # 청크 크기
 format = pyaudio.paInt16 # 오디오 포맷 설정
 channels = 2 # 스테레오 (2), 모노(1)
 rate = 22050 # 샘플 레이트 설정, 44100으로하면 2배속으로 되서 22050 으로 했더니 정배속으로 됨
-duration = 20 # 녹음 최대 시간
+duration = 10 # 녹음 최대 시간
 audio_frames = []
 audio = pyaudio.PyAudio() # 음성 객체 초기화
 stream = None 
@@ -56,7 +56,8 @@ recording = False
 # 파일 이름 저장 변수 (현재 시간을 이름으로 지정)
 fileName = ""
 
-# 녹화 종료 클래스
+
+#region 녹화 종료 클래스
 class record():
     
     def __init__(self):
@@ -78,8 +79,9 @@ class record():
         audio_frames = []
         recording = False
         print('녹화종료')
+#endregion
 
-# 영상, 소리 합성후 저장 함수
+#region 영상, 소리 합성, 저장 함수
 def videoCapture():
     print('영상, 소리 합성중')
     # 음성 파일은 녹화가 끝나고 만들어 지므로 살짝 지연
@@ -94,8 +96,9 @@ def videoCapture():
     video = f"{fileName}.mp4"
     videoclip.write_videofile(save_path + video)
     print(f'영상, 소리 합성 완료, {video} 생성 완료')
-    
-# 이미지 저장 함수
+#endregion
+
+#region 이미지 저장 함수
 def displayCapture(image):
     
     # 저장 폴더, 없는 경우 생성
@@ -110,11 +113,20 @@ def displayCapture(image):
         print(f"{file_name} 저장 완료") # 출력
     except:
         print("에러 발생")
+#endregion 
+
+#region 필터 이미지 적용 함수
+def filter_images(name):
+    global image_right_eye, image_left_eye, image_nose_tip, imageList
+    image_right_eye = imageList[name][0]
+    image_left_eye = imageList[name][1]
+    image_nose_tip = imageList[name][2]
+#endregion
 
 # 비디오와 오디오를 합칠때 thread를 쓰지 않으면 opencv가 끊기므로 thread 적용
 video_save = threading.Thread(target=videoCapture)
 
-# 동물 이미지 불러오기
+#region 동물 이미지 불러오기
 # cv2.IMREAD_UNCHANGED, 이미지파일을 alpha channel(누끼)까지 포함하여 읽는다.
 # 이미지를 쉽게 보기 위해 dictionary 를 사용
 imageList = {
@@ -125,13 +137,14 @@ imageList = {
     'dog' : [cv2.imread(animal_path+'dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
             cv2.imread(animal_path+'dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
 }
+#endregion
 
 # 처음 이미지 기본값, 판다 적용
 image_right_eye = imageList['panda'][0]
 image_left_eye = imageList['panda'][1]
 image_nose_tip = imageList['panda'][2]
 
-# For static images:
+#region mideapipe 얼굴인식 기본 코드
 IMAGE_FILES = []
 with mp_face_detection.FaceDetection(
         model_selection=1, min_detection_confidence=0.5) as face_detection:
@@ -152,8 +165,9 @@ with mp_face_detection.FaceDetection(
             mp_drawing.draw_detection(annotated_image, detection)
         cv2.imwrite('/tmp/annotated_image' +
                     str(idx) + '.png', annotated_image)
+#endregion
 
-# 캠에 이미지 덮어 씌우는 함수
+#region 캠에 이미지 덮어 씌우는 함수
 def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, width, height, 덮어씌울 이미지
     alpha = overlay_image[:, :, 3] #BGRA, A값을 가져옴
     mask_image = alpha / 255 # 0~255 ->255로 나누면 0~1의 값을 가짐, 1: 불투명, 0: 투명
@@ -166,8 +180,9 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
     except Exception as e:
         print(e)
         pass
+#endregion
 
-# 메인 실행 코드
+#region 메인 실행 코드
 with mp_face_detection.FaceDetection(
         model_selection=0, min_detection_confidence=0.5) as face_detection:
     
@@ -184,7 +199,8 @@ with mp_face_detection.FaceDetection(
         
         # 현재시간 표시
         now = datetime.datetime.now().strftime("%H-%M-%S")
-        cv2.putText(image, str(now), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2)
+        time_org = (10, 30)
+        # cv2.putText(image, str(now), time_org, font, scale, color, thickness)
         
         # 현재 적용된 동물 필터 텍스트 출력
         cv2.putText(image, animal, org, font, scale, color, thickness)
@@ -214,8 +230,8 @@ with mp_face_detection.FaceDetection(
                 # 이미지 적용
                 # 이미지의 크기를 동적으로 하기위해 얼굴의 크기 값을 연산하는 부분을 이용
                 box_wh = detection.location_data.relative_bounding_box
-                box_w = int(box_wh.width * 100)
-                box_h = int(box_wh.height * 100)
+                box_w = int(round(box_wh.width, 2) * 100)
+                box_h = int(round(box_wh.height, 2) * 100)
 
                 # 이미지 위치 지정, 얼굴크기에 맞게 위치를 동적으로 지정 함
                 w, h = width, height
@@ -223,7 +239,7 @@ with mp_face_detection.FaceDetection(
                 left_eye = (int(left_eye.x * w)+box_w, int(left_eye.y * h)-(box_h*3)) 
                 nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+box_h)
                 
-                # 이미지 대입
+                #region 이미지 대입
                 # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형 한 후 사용
                 # 해당 에러는 현재 입히는 이미지의 크기와 opencv 상에서 적용되는 이미지의 해상도가 달라 생기는 것으로
                 # 둘의 이미지를 같아지게 하도록 cv2.resize()를 적용
@@ -239,6 +255,7 @@ with mp_face_detection.FaceDetection(
                 # 코, 입
                 overlay_nose_tip = cv2.resize(image_nose_tip, (box_w*4, box_h*4))
                 overlay(image, *nose_tip, box_w*2, box_h*2, overlay_nose_tip)
+                #endregion
 
         # 영상 출력
         cv2.imshow('SEnow Camera', cv2.resize(image, None, fx=1.5, fy=1.5))
@@ -250,27 +267,22 @@ with mp_face_detection.FaceDetection(
         if keycode == 27:
             break
         
-        # 이미지 변환
+        #region 이미지 변환
         if keycode == ord('a'):
-            image_right_eye = imageList['panda'][0]
-            image_left_eye = imageList['panda'][1]
-            image_nose_tip = imageList['panda'][2]
             animal = 'panda'
+            filter_images(animal)
             print('판다')
 
         if keycode == ord('s'):
-            image_right_eye = imageList['cat'][0]
-            image_left_eye = imageList['cat'][1]
-            image_nose_tip = imageList['cat'][2]
             animal = 'cat'
+            filter_images(animal)
             print('고양이')
 
         if keycode == ord('d'):
-            image_right_eye = imageList['dog'][0]
-            image_left_eye = imageList['dog'][1]
-            image_nose_tip = imageList['dog'][2]
             animal = 'dog'
+            filter_images(animal)
             print('개')
+        #endregion
         
         # opencv 사진 저장
         if keycode == ord('p'):
@@ -278,19 +290,20 @@ with mp_face_detection.FaceDetection(
             img_save = threading.Thread(target=displayCapture, args=[image])
             img_save.start()
         
-        # 녹화 시작
+        #region 녹화 시작
         if keycode == ord('v') and recording == False:
             print('녹화 시작')
             # 오디오 생성
             stream = audio.open(format=format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
             
             # 비디오 저장 객체 생성
-            fileName = datetime.datetime.now().strftime("%H-%M-%S")
+            fileName = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
             out = cv2.VideoWriter(save_path + f'{fileName}.avi',fourcc, fps, (width, height))
 
             # 녹화 시작
             recording = True
             start_time = datetime.datetime.now()
+        #endregion
         
         # 녹음 시간이 duration 을 넘으면 녹화 종료
         if keycode == ord('b') and recording:
@@ -298,7 +311,7 @@ with mp_face_detection.FaceDetection(
             record.exit(out, stream, audio, audio_frames)
             video_save.start()
         
-        # 녹화 중이면
+        #region 녹화 중이면
         if recording:
             
             # 프레임 녹화
@@ -312,6 +325,8 @@ with mp_face_detection.FaceDetection(
                 # 녹화 종료
                 record.exit(out, stream, audio, audio_frames)
                 video_save.start()
+        #endregion
+#endregion
 
 if cap.isOpened():
     cap.release()
