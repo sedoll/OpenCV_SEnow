@@ -82,6 +82,23 @@ recording = False
 # 파일 이름 저장 변수 (현재 시간을 이름으로 지정)
 fileName = ""
 
+#region 동물 이미지 불러오기
+# cv2.IMREAD_UNCHANGED, 이미지파일을 alpha channel(누끼)까지 포함하여 읽는다.
+# 이미지를 쉽게 보기 위해 dictionary 를 사용
+imageList = {
+    'panda' : [cv2.imread(animal_path+'panda/right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'panda/left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'panda/nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
+    'cat' : [cv2.imread(animal_path+'cat/right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'cat/left_eye2.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'cat/nose_tip2.png', cv2.IMREAD_UNCHANGED)],
+    'dog' : [cv2.imread(animal_path+'dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
+            cv2.imread(animal_path+'dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
+}
+#endregion
+
+# 처음 이미지 기본값, 판다 적용
+image_right_eye = imageList['panda'][0]
+image_left_eye = imageList['panda'][1]
+image_nose_tip = imageList['panda'][2]
 
 #region 녹화 종료 클래스
 class record():
@@ -95,7 +112,6 @@ class record():
         stream.stop_stream()
         stream.close()
         audio.terminate()
-        
         waveFile = wave.open(save_path + f"{fileName}.wav", 'wb')
         waveFile.setnchannels(channels)
         waveFile.setsampwidth(audio.get_sample_size(format))
@@ -122,11 +138,13 @@ def videoCapture():
     video = f"{fileName}.mp4"
     videoclip.write_videofile(save_path + video)
     print(f'영상, 소리 합성 완료, {video} 생성 완료')
+
+# 비디오와 오디오를 합칠때 thread를 쓰지 않으면 opencv가 끊기므로 thread 적용
+video_save = threading.Thread(target=videoCapture)
 #endregion
 
 #region 이미지 저장 함수
 def displayCapture(image):
-    
     # 저장 폴더, 없는 경우 생성
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -168,27 +186,6 @@ def lens(exp, scale, frame):
     mapy = ((mapy + 1)*rows-1)/2
     return mapx, mapy
 #endregion
-
-# 비디오와 오디오를 합칠때 thread를 쓰지 않으면 opencv가 끊기므로 thread 적용
-video_save = threading.Thread(target=videoCapture)
-
-#region 동물 이미지 불러오기
-# cv2.IMREAD_UNCHANGED, 이미지파일을 alpha channel(누끼)까지 포함하여 읽는다.
-# 이미지를 쉽게 보기 위해 dictionary 를 사용
-imageList = {
-    'panda' : [cv2.imread(animal_path+'panda/right_eye_cutout.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'panda/left_eye_cutout.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(animal_path+'panda/nose_tip_cutout.png', cv2.IMREAD_UNCHANGED)],
-    'cat' : [cv2.imread(animal_path+'cat/right_eye2.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'cat/left_eye2.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(animal_path+'cat/nose_tip2.png', cv2.IMREAD_UNCHANGED)],
-    'dog' : [cv2.imread(animal_path+'dog/right_eye3.png', cv2.IMREAD_UNCHANGED), cv2.imread(animal_path+'dog/left_eye3.png', cv2.IMREAD_UNCHANGED),
-            cv2.imread(animal_path+'dog/nose_tip3.png', cv2.IMREAD_UNCHANGED)]
-}
-#endregion
-
-# 처음 이미지 기본값, 판다 적용
-image_right_eye = imageList['panda'][0]
-image_left_eye = imageList['panda'][1]
-image_nose_tip = imageList['panda'][2]
 
 #region mideapipe 얼굴인식 기본 코드
 IMAGE_FILES = []
