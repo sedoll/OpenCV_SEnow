@@ -228,6 +228,113 @@ def overlay(image, x, y, w, h, overlay_image): # 대상 이미지, x, y 좌표, 
         pass
 #endregion
 
+def animalF(image):
+    # To improve performance, optionally mark the image as not writeable to
+    # pass by reference.
+    image.flags.writeable = False
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = face_detection.process(image)
+    
+    # Draw the face detection annotations on the image. 
+    # mediapipe의 얼굴을 rectagle로 나타내고 세부 위치에 dot로 그리는 함수 부분
+    # dot와 rectagle을 그리는 대신 점의 좌표를 이용해 동물 이미지를 추가하도록 수정
+    image.flags.writeable = True
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    if results.detections:
+        for detection in results.detections:
+            # mp_drawing.draw_detection(image, detection) # 얼굴 크기에 맞게 박스를 생성
+            # print(detection) # detection의 값을 보기위해 사용
+            
+            # dot의 특정 위치 가져오기
+            keypoints = detection.location_data.relative_keypoints
+            right_eye = keypoints[0] # 오른쪽 눈
+            left_eye = keypoints[1] # 왼쪽 눈
+            nose_tip = keypoints[2] # 코 끝 부분
+            
+            # 이미지 적용
+            # 이미지의 크기를 동적으로 하기위해 얼굴의 크기 값을 연산하는 부분을 이용
+            box_wh = detection.location_data.relative_bounding_box
+            box_w = int(round(box_wh.width, 2) * 100)
+            box_h = int(round(box_wh.height, 2) * 100)
+
+            # 이미지 위치 지정, 얼굴크기에 맞게 위치를 동적으로 지정 함
+            w, h = width, height
+            right_eye = (int(right_eye.x * w)-box_w, int(right_eye.y * h)-(box_h*3))
+            left_eye = (int(left_eye.x * w)+box_w, int(left_eye.y * h)-(box_h*3)) 
+            nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+box_h)
+            
+            #region 이미지 대입
+            # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형 한 후 사용
+            # 해당 에러는 현재 입히는 이미지의 크기와 opencv 상에서 적용되는 이미지의 해상도가 달라 생기는 것으로
+            # 둘의 이미지를 같아지게 하도록 cv2.resize()를 적용
+            
+            # 오른쪽 귀
+            overlay_right_eye = cv2.resize(image_right_eye, (box_w*2, box_h*2))
+            overlay(image, *right_eye, box_w, box_h, overlay_right_eye)
+            
+            # 왼쪽 귀
+            overlay_left_eye = cv2.resize(image_left_eye, (box_w*2, box_h*2))
+            overlay(image, *left_eye, box_w, box_h, overlay_left_eye)
+            
+            # 코, 입
+            overlay_nose_tip = cv2.resize(image_nose_tip, (box_w*4, box_h*4))
+            overlay(image, *nose_tip, box_w*2, box_h*2, overlay_nose_tip)
+            #endregion
+    return image
+
+def faceRecog(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # 얼굴인식을 위해 gray 변환
+    
+    expression_label = None
+    
+    # 얼굴 인식
+    # scaleFactor이 1에 가까울수록 표정 인식이 잘 되고 멀 수록 잘 안됨
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    #region 얼굴이 인식되면 표정을 인식
+    for (x, y, w, h) in faces:
+        # 얼굴 크기에 알맞도록 사각형 그리기
+        # cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        
+        # 얼굴 크기 반환
+        face_roi = gray[y:y+h, x:x+w]
+
+        # 표정을 인식하기 위해 표정 dataset과 똑같은 사이즈 변환
+        # dataset 이미지와 입력된 얼굴의 크기가 다르면 error 발생
+        face_roi = cv2.resize(face_roi, (64, 64))
+        face_roi = np.expand_dims(face_roi, axis=-1)
+        face_roi = np.expand_dims(face_roi, axis=0)
+        face_roi = face_roi / 255.0
+
+        # 모델을 통해 표정 분석
+        output = model.predict(face_roi)[0]
+
+        # 해당 표정의 값 반환
+        expression_index = np.argmax(output)
+
+        # 표정에 따른 label 값 저장
+        expression_label = expression_labels[expression_index]
+
+        # 표정 값 출력
+        print(expression_label, end=' ')
+        # cv2.putText(frame, expression_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+    
+    #endregion
+    
+    # region 표정에 따른 필터
+    # hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    if expression_label == 'Surprise' or expression_label == 'Fear':
+        # mask = cv2.inRange(hsv, lowerb1, upperb1)
+        # frame = mask # 2차원 형태로 얼굴의 형태만 추출
+        # frame = cv2.bitwise_and(frame, frame, mask=mask) # 검출된 얼굴의 영역을 원본 이미지에 합성
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+    mapx, mapy = lens(exp, scale, image)
+    if expression_label == 'Happy':
+        image = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+    #endregion
+    return image
+
 #region 메인 실행 코드
 with mp_face_detection.FaceDetection(
         model_selection=0, min_detection_confidence=0.5) as face_detection:
@@ -250,110 +357,11 @@ with mp_face_detection.FaceDetection(
         
         # 현재 적용된 동물 필터 텍스트 출력
         # cv2.putText(image, animal, org, font, scale, color, thickness)
-        
-        # To improve performance, optionally mark the image as not writeable to
-        # pass by reference.
-        image.flags.writeable = False
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = face_detection.process(image)
 
-        if af:
-            # Draw the face detection annotations on the image. 
-            # mediapipe의 얼굴을 rectagle로 나타내고 세부 위치에 dot로 그리는 함수 부분
-            # dot와 rectagle을 그리는 대신 점의 좌표를 이용해 동물 이미지를 추가하도록 수정
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            if results.detections:
-                for detection in results.detections:
-                    # mp_drawing.draw_detection(image, detection) # 얼굴 크기에 맞게 박스를 생성
-                    # print(detection) # detection의 값을 보기위해 사용
-                    
-                    # dot의 특정 위치 가져오기
-                    keypoints = detection.location_data.relative_keypoints
-                    right_eye = keypoints[0] # 오른쪽 눈
-                    left_eye = keypoints[1] # 왼쪽 눈
-                    nose_tip = keypoints[2] # 코 끝 부분
-                    
-                    # 이미지 적용
-                    # 이미지의 크기를 동적으로 하기위해 얼굴의 크기 값을 연산하는 부분을 이용
-                    box_wh = detection.location_data.relative_bounding_box
-                    box_w = int(round(box_wh.width, 2) * 100)
-                    box_h = int(round(box_wh.height, 2) * 100)
-
-                    # 이미지 위치 지정, 얼굴크기에 맞게 위치를 동적으로 지정 함
-                    w, h = width, height
-                    right_eye = (int(right_eye.x * w)-box_w, int(right_eye.y * h)-(box_h*3))
-                    left_eye = (int(left_eye.x * w)+box_w, int(left_eye.y * h)-(box_h*3)) 
-                    nose_tip = (int(nose_tip.x * w), int(nose_tip.y * h)+box_h)
-                    
-                    #region 이미지 대입
-                    # operands could not be broadcast together with shapes을 방지하기 위해 기존 이미지를 변형 한 후 사용
-                    # 해당 에러는 현재 입히는 이미지의 크기와 opencv 상에서 적용되는 이미지의 해상도가 달라 생기는 것으로
-                    # 둘의 이미지를 같아지게 하도록 cv2.resize()를 적용
-                    
-                    # 오른쪽 귀
-                    overlay_right_eye = cv2.resize(image_right_eye, (box_w*2, box_h*2))
-                    overlay(image, *right_eye, box_w, box_h, overlay_right_eye)
-                    
-                    # 왼쪽 귀
-                    overlay_left_eye = cv2.resize(image_left_eye, (box_w*2, box_h*2))
-                    overlay(image, *left_eye, box_w, box_h, overlay_left_eye)
-                    
-                    # 코, 입
-                    overlay_nose_tip = cv2.resize(image_nose_tip, (box_w*4, box_h*4))
-                    overlay(image, *nose_tip, box_w*2, box_h*2, overlay_nose_tip)
-                    #endregion
-        else:
-            # 동물필터는 RGB로 사용하기에 BGR로 다시 변경
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # 얼굴인식을 위해 gray 변환
-            
-            # 얼굴 인식
-            # scaleFactor이 1에 가까울수록 표정 인식이 잘 되고 멀 수록 잘 안됨
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-            
-            #region 얼굴이 인식되면 표정을 인식
-            for (x, y, w, h) in faces:
-                # 얼굴 크기에 알맞도록 사각형 그리기
-                # cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                
-                # 얼굴 크기 반환
-                face_roi = gray[y:y+h, x:x+w]
-
-                # 표정을 인식하기 위해 표정 dataset과 똑같은 사이즈 변환
-                # dataset 이미지와 입력된 얼굴의 크기가 다르면 error 발생
-                face_roi = cv2.resize(face_roi, (64, 64))
-                face_roi = np.expand_dims(face_roi, axis=-1)
-                face_roi = np.expand_dims(face_roi, axis=0)
-                face_roi = face_roi / 255.0
-
-                # 모델을 통해 표정 분석
-                output = model.predict(face_roi)[0]
-
-                # 해당 표정의 값 반환
-                expression_index = np.argmax(output)
-
-                # 표정에 따른 label 값 저장
-                expression_label = expression_labels[expression_index]
-
-                # 표정 값 출력
-                print(expression_label, end=' ')
-                # cv2.putText(frame, expression_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            
-            #endregion
-            
-            # region 표정에 따른 필터
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            if expression_label == 'Surprise' or expression_label == 'Fear':
-                # mask = cv2.inRange(hsv, lowerb1, upperb1)
-                # frame = mask # 2차원 형태로 얼굴의 형태만 추출
-                # frame = cv2.bitwise_and(frame, frame, mask=mask) # 검출된 얼굴의 영역을 원본 이미지에 합성
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                
-            mapx, mapy = lens(exp, scale, image)
-            if expression_label == 'Happy':
-                image = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
-            #endregion
+        if af: # 동물 필터 실행
+            image = animalF(image)
+        else: # 표정 인식 필터 실행
+            image = faceRecog(image)
 
         # 영상 출력
         cv2.imshow('SEnow Camera', cv2.resize(image, None, fx=1.5, fy=1.5))
@@ -419,7 +427,6 @@ with mp_face_detection.FaceDetection(
         
         #region 녹화 중이면
         if recording:
-            
             # 프레임 녹화
             out.write(image)
             
