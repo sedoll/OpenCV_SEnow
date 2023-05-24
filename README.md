@@ -65,3 +65,9 @@
 <strong>23.04.05</strong>
 
 <p>moviepy를 이용해서 영상 합치기 성공, avi(video) + wav(audio) = mp4(video + audio)</p><br>
+
+<strong>23.05.24</strong>
+
+<p>표정 인식을 이용한 필터 추가</p>
+
+[표정 인식에 대한 상세 설명은 내 블로그에 기재](https://blog.naver.com/tmvmffpsej/223104743267)<br>
