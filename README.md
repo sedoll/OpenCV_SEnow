@@ -3,13 +3,11 @@
 ## OpenCV로 만든 카메라 필터, 스노우
 ---
 
-[Test Video](https://youtu.be/sYYX3Na88J "My Youtube")<br>
+[My Youtube](https://youtu.be/sYYX3Na88J "Test Video")<br>
 
-[Blog](https://blog.naver.com/tmvmffpsej/222795649596 "My Blog")<br>
+[My Blog](https://blog.naver.com/tmvmffpsej/222795649596)<br><br>
 
-[Reference](https://youtu.be/XK3eU9egll8)<br><br>
-
-## 사용한 라이브러리
+## 사용한 라이브러리 (Use Library)
 ---
 
 [mediapipe](https://pypi.org/project/mediapipe)<br>
@@ -20,7 +18,16 @@
 
 [moviepy](https://pypi.org/project/moviepy)<br>
 
-[numpy](https://pypi.org/project/numpy)<br><br>
+[numpy](https://pypi.org/project/numpy)<br>
+
+[dlib](https://pypi.org/project/dlib/)
+* dlib는 설치하기 전에 cmake와 visual studio를 설치해줘야 한다.
+* dlib 상세 설치 정보 링크 https://suy379.tistory.com/76
+
+[tensorflow](https://pypi.org/project/tensorflow/)
+
+[keras](https://pypi.org/project/keras/)
+* keras를 설치하기 전에 tensorflow를 먼저 설치해줘야 한다.<br><br>
 
 ### 녹화 한 파일에서 음성이 안 들릴경우
 
@@ -28,12 +35,12 @@
 
 <p><strong>마이크가 음소거 되어 있는지 확인</strong></p><br>
 
-### 사용한 이미지 크기
+### 사용한 동물 필터 이미지 크기 (Use Image Animal Size)
 
 ---
 
-<p>귀: 50x50</p>
-<p>입: 100x100</p><br>
+<p>귀(ear): 50x50</p>
+<p>입(mouth): 100x100</p><br>
 
 ### Release Note
 
@@ -68,6 +75,21 @@
 
 <strong>23.05.24</strong>
 
-<p>표정 인식을 이용한 필터 추가</p>
+<p>표정 인식을 이용한 필터 추가 (프로젝트 최종 완성본)</p>
 
-[표정 인식에 대한 상세 설명은 내 블로그에 기재](https://blog.naver.com/tmvmffpsej/223104743267)<br>
+[표정 인식에 대한 상세 설명은 내 블로그에 기재](https://blog.naver.com/tmvmffpsej/223104743267)<br><br>
+
+### Reference
+
+---
+
+#### 동물 필터 카메라 (Animal Camera)
+* https://youtu.be/XK3eU9egll8
+
+#### 동물 필터 이미지 주소 (Animal Image)
+* https://www.freepik.com/free-vector/cute-animal-masks-video-chat-application-effect-filters-set_6380101.htm
+
+#### 표정 인식 필터 카메라 (Face Recognition Filter Camera)
+* https://github.com/opencv/opencv/tree/master/data/haarcascades
+* http://dlib.net/files/
+* https://github.com/petercunha/Emotion
