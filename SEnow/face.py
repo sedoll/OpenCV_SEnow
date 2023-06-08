@@ -64,7 +64,7 @@ while True:
     #region 얼굴이 인식되면 표정을 인식
     for (x, y, w, h) in faces:
         # 얼굴 크기에 알맞도록 사각형 그리기
-        # cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
         
         # 얼굴 크기 반환
         face_roi = gray[y:y+h, x:x+w]
@@ -87,21 +87,21 @@ while True:
 
         # 표정 값 출력
         print(expression_label, end=' ')
-        # cv2.putText(frame, expression_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.putText(frame, expression_label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
     
     #endregion
     
     # region 표정에 따른 필터
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    if expression_label == 'Surprise':
-        # mask = cv2.inRange(hsv, lowerb1, upperb1)
-        # frame = mask # 2차원 형태로 얼굴의 형태만 추출
-        # frame = cv2.bitwise_and(frame, frame, mask=mask) # 검출된 얼굴의 영역을 원본 이미지에 합성
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    # if expression_label == 'Surprise':
+    #     # mask = cv2.inRange(hsv, lowerb1, upperb1)
+    #     # frame = mask # 2차원 형태로 얼굴의 형태만 추출
+    #     # frame = cv2.bitwise_and(frame, frame, mask=mask) # 검출된 얼굴의 영역을 원본 이미지에 합성
+    #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-    mapx, mapy = lens(exp, scale, frame)
-    if expression_label == 'Happy':
-        frame = cv2.remap(frame, mapx, mapy, cv2.INTER_LINEAR)
+    # mapx, mapy = lens(exp, scale, frame)
+    # if expression_label == 'Happy':
+    #     frame = cv2.remap(frame, mapx, mapy, cv2.INTER_LINEAR)
     #endregion
     
     # 출력

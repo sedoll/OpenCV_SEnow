@@ -107,7 +107,6 @@ class record():
         pass
     
     def exit(out, stream, audio, audio_frames):
-        global recording
         out.release()
         stream.stop_stream()
         stream.close()
@@ -119,7 +118,6 @@ class record():
         waveFile.writeframes(b''.join(audio_frames))
         waveFile.close()
         audio_frames = []
-        recording = False
         print('녹화종료')
 #endregion
 
@@ -420,6 +418,7 @@ with mp_face_detection.FaceDetection(
         if keycode == ord('b') and recording:
             # 녹화 종료
             record.exit(out, stream, audio, audio_frames)
+            recording = False
             video_save.start()
         
         #region 녹화 중이면
@@ -434,6 +433,7 @@ with mp_face_detection.FaceDetection(
             if (datetime.datetime.now() - start_time).seconds >= duration:
                 # 녹화 종료
                 record.exit(out, stream, audio, audio_frames)
+                recording = False
                 video_save.start()
         #endregion
 #endregion
