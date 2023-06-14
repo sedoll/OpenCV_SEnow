@@ -41,12 +41,9 @@ model = load_model('c:/j/emotion_model.hdf5')
 
 expression_label = None
 
-lowerb1 = (0, 40, 0)
-upperb1 = (20, 180, 255)
-
 # 렌즈 변수
-exp = 2       # 볼록, 오목 지수 (오목 : 0.1 ~ 1, 볼록 : 1.1~)
-scale = 1           # 변환 영역 크기 (0 ~ 1)
+exp = 2 # 볼록, 오목 지수 (오목 : 0.1 ~ 1, 볼록 : 1.1~)
+scale = 1 # 변환 영역 크기 (0 ~ 1)
 
 # 창 크기 출력
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -185,6 +182,13 @@ def lens(exp, scale, frame):
     return mapx, mapy
 #endregion
 
+#region 보통 표정 canny
+def canny(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    canny = cv2.Canny(gray, 50, 100)
+    return canny
+#endregion
+
 #region mideapipe 얼굴인식 기본 코드
 IMAGE_FILES = []
 with mp_face_detection.FaceDetection(
@@ -317,16 +321,13 @@ def faceRecog(image):
     #endregion
     
     # region 표정에 따른 필터
-    # hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     if expression_label == 'Surprise' or expression_label == 'Fear':
-        # mask = cv2.inRange(hsv, lowerb1, upperb1)
-        # frame = mask # 2차원 형태로 얼굴의 형태만 추출
-        # frame = cv2.bitwise_and(frame, frame, mask=mask) # 검출된 얼굴의 영역을 원본 이미지에 합성
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-    mapx, mapy = lens(exp, scale, image)
+        image = canny(image)
+    
     if expression_label == 'Happy':
+        mapx, mapy = lens(exp, scale, image)
         image = cv2.remap(image, mapx, mapy, cv2.INTER_LINEAR)
+    
     #endregion
     return image
 
