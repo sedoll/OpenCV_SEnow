@@ -5,7 +5,7 @@
 
 [My Youtube](https://youtu.be/sYYX3Na88J "Test Video")<br>
 
-[My Blog](https://blog.naver.com/tmvmffpsej/222795649596)<br><br>
+[My Blog](https://blog.naver.com/tmvmffpsej/223128389009)<br><br>
 
 ## 사용한 라이브러리 (Use Library)
 ---
